@@ -1,12 +1,12 @@
 # Netflix User Churn Prediction
 
-Predicting subscription cancellations from customer behavior.
+Predicting subscription cancellations from customer behavior, and investigating why the model performed as well as it did.
 
 ---
 
 ## The problem
 
-Subscription businesses lose revenue two ways: customers who leave, and money spent retaining customers who were never going to leave. Both are expensive. The question this project answers is which customers are at risk of cancelling, and which behaviors signal it early enough to act on.
+Subscription businesses lose revenue two ways: customers who leave, and money spent retaining customers who were never going to leave. Both are expensive. The question this project addresses is which customers are at risk of cancelling, and which behaviors are associated with that risk.
 
 **Dataset:** 5,000 customer records covering subscription details, engagement, and account history.
 
@@ -14,50 +14,57 @@ Subscription businesses lose revenue two ways: customers who leave, and money sp
 
 ## Approach
 
-1. Exploratory analysis of engagement, tenure, subscription tier, and account activity
+1. Exploratory analysis of engagement, subscription tier, and account activity
 2. Feature engineering and encoding
-3. Baseline and comparative modeling
-4. Validation, leakage investigation, and correction
-5. Evaluation on the corrected model
+3. Baseline (logistic regression) and comparative (random forest) modeling
+4. Investigation of the model's performance through feature importance, ablation, and cross-validation
 
 ---
 
 ## What the data showed
 
-Declining engagement and longer gaps since last login were the strongest behavioral signals of churn. Pricing tier was a weaker predictor than expected. Customers were not primarily leaving because of cost — they were leaving after they stopped using the service, which is a different problem with a different intervention.
+Churned customers watched 5.9 hours on average against 17.4 for active customers, and last logged in 38 days ago against 22. Churn rose across login-recency bands from 14.8% within the first week to 75.1% at 31-60 days of inactivity.
+
+Customers with both low watch time and a stale login churned at 95.8%, against roughly 50% with either signal alone and 2.1% with neither.
+
+Basic subscribers had a 61.8% churn rate, compared with 45.4% for Standard and 43.7% for Premium, despite similar average watch hours across tiers. The tier difference is not explained by average engagement alone.
+
+Age, region, and device showed little separation.
 
 ---
 
-## The leakage problem
+## Model results
 
-The initial Random Forest returned **97.7% accuracy**.
+| Model | Accuracy | ROC-AUC |
+|---|---:|---:|
+| Logistic Regression | 89% | 0.966 |
+| Random Forest | 99% | 0.999 |
 
-That result was implausibly high for churn prediction, so I investigated rather than reported it. Examining feature importances showed a small number of variables dominating the model. Tracing those fields back to how they were recorded showed at least one was only populated after a customer had already cancelled.
-
-The model was not predicting churn. It was reading it.
-
-I removed the leakage-prone features and rebuilt the evaluation from the start rather than patching the existing one.
-
----
-
-## Results after correction
-
-| Model | Test Accuracy |
-|---|---|
-| Random Forest (with leakage) | 97.7% |
-| **Random Forest (corrected)** | **74.6%** |
-
-After removing leakage-prone features, the Random Forest achieved **74.6% test accuracy**, providing a more realistic estimate of performance on unseen customers.
-
-For churn prediction, accuracy alone is insufficient. Recall shows how many actual churners the model identifies, while precision indicates how efficiently retention resources are targeted.
+Both models were evaluated on a stratified 20% holdout with precision, recall, and F1 reported for each class.
 
 ---
 
-## What this would support
+## Investigating the result
 
-Customers showing declining engagement and longer periods since their last login are more likely to churn. These signals can identify at-risk subscribers early enough to prioritize retention effort, and the model's ranked probabilities allow that effort to be directed rather than applied broadly.
+A ROC-AUC of 0.999 warranted investigation rather than acceptance.
 
-**Next step, not yet built:** predicting who is at risk answers only half the question. Whether an intervention actually reduces churn requires a controlled experiment comparing retention rates between treated and untreated at-risk customers. That is a separate piece of work and I have not done it here.
+**Feature importance.** Three engagement variables account for 0.78 of total importance: `avg_watch_time_per_day` (0.393), `watch_hours` (0.197), `last_login_days` (0.186). Subscription tier falls below 0.01 despite the 18-point marginal churn gap seen in EDA.
+
+**Ablation.** Removing any single engagement feature leaves performance high, because the remaining engagement variables retain substantial predictive information. Removing all three drops ROC-AUC from 0.999 to 0.589, close to random ranking.
+
+**Duplicates.** No exact duplicate feature rows were found, so identical repeated observations do not explain the unusually high performance.
+
+**Cross-validation.** Mean ROC-AUC 0.9984 across five folds, standard deviation 0.00037.
+
+---
+
+## Conclusion
+
+The random forest achieves unusually high out-of-sample performance, and ablation shows it is driven almost entirely by three engagement variables. Removing them reduces ROC-AUC to 0.589, much closer to random ranking, meaning demographic, plan, payment, and content-preference features carry little predictive information on their own.
+
+The near-perfect separation produced by the engagement variables is unusual enough that the result should be treated cautiously. It may reflect how this dataset was constructed rather than performance achievable on real customer data. Without documentation of how the churn label and engagement variables were recorded, target leakage cannot be confirmed or ruled out from model performance alone.
+
+**Next step, not built here.** Predicting who is at risk answers half the question. Whether an intervention reduces churn requires a controlled experiment comparing retention between treated and untreated at-risk customers.
 
 ---
 
@@ -67,15 +74,15 @@ Python · pandas · NumPy · scikit-learn · Matplotlib · Seaborn · Jupyter
 
 ---
 
-## Running it
+## Notebooks
 
-```bash
-pip install -r requirements.txt
-jupyter notebook netflix_churn.ipynb
-```
+- `01_data_exploration.ipynb` — data checks and exploratory analysis
+- `02_eda_visualizations.ipynb` — charts and interpretation
+- `03_feature_engineering.ipynb` — encoding and train/test split
+- `04_model_building.ipynb` — modeling and investigation
 
 ---
 
 ## What I took from this
 
-The moment to investigate a result is when it flatters you. A weak result gets scrutinized automatically; a strong one gets accepted. Tracing a variable back to how it came to exist, before trusting what it appears to show, is now part of how I validate any model.
+A result that flatters you deserves more scrutiny than one that disappoints you. My first explanation for the high performance was target leakage. Ablation, duplicate checks, and cross-validation helped narrow down what was driving the result, but they could not establish whether leakage was present. Without documentation of how the target and engagement variables were generated, that question remains unresolved.
