@@ -1,6 +1,6 @@
 # Netflix User Churn Prediction
 
-Predicting subscription cancellations from customer behavior.
+Predicting subscription cancellations from customer behavior, and correcting a model that looked far better than it was.
 
 ---
 
@@ -24,7 +24,7 @@ Subscription businesses lose revenue two ways: customers who leave, and money sp
 
 ## What the data showed
 
-Declining engagement and longer gaps since last login were the strongest behavioral signals of churn. Pricing tier was a weaker predictor than expected. Customers were not primarily leaving because of cost, they were leaving after they stopped using the service, which is a different problem with a different intervention.
+Declining engagement and longer gaps since last login were the strongest behavioral signals of churn. Pricing tier was a weaker predictor than expected. Customers were not primarily leaving because of cost — they were leaving after they stopped using the service, which is a different problem with a different intervention.
 
 ---
 
@@ -42,24 +42,14 @@ I removed the leakage-prone features and rebuilt the evaluation from the start r
 
 ## Results after correction
 
-| Model | Accuracy | Precision (churn) | Recall (churn) | F1 (churn) | ROC-AUC |
-|---|---|---|---|---|---|
-| Logistic Regression | — | — | — | — | — |
-| Random Forest (with leakage) | 97.7% | — | — | — | — |
-| **Random Forest (corrected)** | **74.6%** | — | — | — | — |
-
-*Fill these from your notebook output.*
+| Model | Test Accuracy |
+|---|---|
+| Random Forest (with leakage) | 97.7% |
+| **Random Forest (corrected)** | **74.6%** |
 
 After removing leakage-prone features, the Random Forest achieved **74.6% test accuracy**, providing a more realistic estimate of performance on unseen customers.
 
-**Confusion matrix (corrected model):**
-
-|  | Predicted: Stay | Predicted: Churn |
-|---|---|---|
-| **Actual: Stay** | — | — |
-| **Actual: Churn** | — | — |
-
-For churn, recall on the positive class matters more than overall accuracy. A model that misses churners is not useful for retention, regardless of how accurate it looks overall.
+For churn prediction, accuracy alone is insufficient. Recall shows how many actual churners the model identifies, while precision indicates how efficiently retention resources are targeted.
 
 ---
 
