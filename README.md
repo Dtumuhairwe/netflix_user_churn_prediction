@@ -24,7 +24,7 @@ Subscription businesses lose revenue two ways: customers who leave, and money sp
 
 ## What the data showed
 
-Declining engagement and longer gaps since last login were the strongest behavioral signals of churn. Pricing tier was a weaker predictor than expected. Customers were not primarily leaving because of cost — they were leaving after they stopped using the service, which is a different problem with a different intervention.
+Declining engagement and longer gaps since last login were the strongest behavioral signals of churn. Pricing tier was a weaker predictor than expected. Customers were not primarily leaving because of cost, they were leaving after they stopped using the service, which is a different problem with a different intervention.
 
 ---
 
