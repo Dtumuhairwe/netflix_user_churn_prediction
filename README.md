@@ -1,6 +1,6 @@
 # Netflix User Churn Prediction
 
-Predicting subscription cancellations from customer behavior, and correcting a model that looked far better than it was.
+Predicting subscription cancellations from customer behavior.
 
 ---
 
