@@ -1,70 +1,81 @@
 # Netflix User Churn Prediction
 
-Machine learning project to predict which Netflix users are likely to cancel their subscription, using Python and Scikit-learn.
+Predicting subscription cancellations from customer behavior.
 
-## Overview
+---
 
-This project analyzes 5,000 Netflix customer records to understand what drives churn and build a predictive model. The analysis shows that churn is primarily driven by user engagement behavior rather than pricing or demographics.
+## The problem
 
-## Key Findings
+Subscription businesses lose revenue two ways: customers who leave, and money spent retaining customers who were never going to leave. Both are expensive. The question this project answers is which customers are at risk of cancelling, and which behaviors signal it early enough to act on.
 
-- Basic plan users churn at 61.8% — nearly double Premium users at 43.7%
-- - Churned users had not logged in for an average of 38 days vs 22 days for active users
-  - - Watch hours and daily engagement are the strongest predictors of churn
-    - - Price has very little impact on whether someone cancels
-      - - A data leakage check confirmed that behavioral features must be handled carefully in production
-       
-        - ## Tech Stack
-       
-        - - **Python** — data analysis and modelling
-          - - **Pandas** — data cleaning and exploration
-            - - **Matplotlib / Seaborn** — visualizations
-              - - **Scikit-learn** — machine learning models
-               
-                - ## Project Structure
-               
-                - ```
-                  netflix_user_churn_prediction/
-                  ├── data/
-                  │   └── netflix_customer_churn.csv
-                  ├── notebooks/
-                  │   ├── 01_data_exploration.ipynb
-                  │   ├── 02_eda_visualizations.ipynb
-                  │   ├── 03_feature_engineering.ipynb
-                  │   └── 04_model_building.ipynb
-                  └── requirements.txt
-                  ```
+**Dataset:** 5,000 customer records covering subscription details, engagement, and account history.
 
-                  ## Model Results
+---
 
-                  | Model | Accuracy |
-                  |-------|----------|
-                  | Logistic Regression | 89.9% |
-                  | Random Forest | 97.7% |
-                  | Random Forest (leakage removed) | 74.6% |
+## Approach
 
-                  The honest production accuracy after removing leakage-prone features is 74.6%.
+1. Exploratory analysis of engagement, tenure, subscription tier, and account activity
+2. Feature engineering and encoding
+3. Baseline and comparative modeling
+4. Validation, leakage investigation, and correction
+5. Evaluation on the corrected model
 
-                  ## How to Run
+---
 
-                  1. Clone the repo
-                  2. ```bash
-                     git clone https://github.com/Dtumuhairwe/netflix_user_churn_prediction.git
-                     cd netflix_user_churn_prediction
-                     ```
+## What the data showed
 
-                     2. Install dependencies
-                     3. ```bash
-                        pip3 install pandas scikit-learn matplotlib seaborn jupyter
-                        ```
+Declining engagement and longer gaps since last login were the strongest behavioral signals of churn. Pricing tier was a weaker predictor than expected. Customers were not primarily leaving because of cost — they were leaving after they stopped using the service, which is a different problem with a different intervention.
 
-                        3. Open notebooks in order
-                        4. ```bash
-                           jupyter notebook
-                           ```
+---
 
-                           ## Author
+## The leakage problem
 
-                           **Doreen Tumuhairwe**
-                           M.S. Data Science — University of the Pacific, Stockton CA
-                           [LinkedIn](https://linkedin.com/in/dtumuhairwe) | [GitHub](https://github.com/Dtumuhairwe)
+The initial Random Forest returned **97.7% accuracy**.
+
+That result was implausibly high for churn prediction, so I investigated rather than reported it. Examining feature importances showed a small number of variables dominating the model. Tracing those fields back to how they were recorded showed at least one was only populated after a customer had already cancelled.
+
+The model was not predicting churn. It was reading it.
+
+I removed the leakage-prone features and rebuilt the evaluation from the start rather than patching the existing one.
+
+---
+
+## Results after correction
+
+| Model | Test Accuracy |
+|---|---|
+| Random Forest (with leakage) | 97.7% |
+| **Random Forest (corrected)** | **74.6%** |
+
+After removing leakage-prone features, the Random Forest achieved **74.6% test accuracy**, providing a more realistic estimate of performance on unseen customers.
+
+For churn prediction, accuracy alone is insufficient. Recall shows how many actual churners the model identifies, while precision indicates how efficiently retention resources are targeted.
+
+---
+
+## What this would support
+
+Customers showing declining engagement and longer periods since their last login are more likely to churn. These signals can identify at-risk subscribers early enough to prioritize retention effort, and the model's ranked probabilities allow that effort to be directed rather than applied broadly.
+
+**Next step, not yet built:** predicting who is at risk answers only half the question. Whether an intervention actually reduces churn requires a controlled experiment comparing retention rates between treated and untreated at-risk customers. That is a separate piece of work and I have not done it here.
+
+---
+
+## Stack
+
+Python · pandas · NumPy · scikit-learn · Matplotlib · Seaborn · Jupyter
+
+---
+
+## Running it
+
+```bash
+pip install -r requirements.txt
+jupyter notebook netflix_churn.ipynb
+```
+
+---
+
+## What I took from this
+
+The moment to investigate a result is when it flatters you. A weak result gets scrutinized automatically; a strong one gets accepted. Tracing a variable back to how it came to exist, before trusting what it appears to show, is now part of how I validate any model.
